@@ -40,10 +40,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// We should have a Greeter now! This feels like a normal interface
-	// implementation but is in fact over an RPC connection.
+	// We should have a Greeter now! This feels like a normal interface implementation but is in fact over an RPC connection.
 	greeter := raw.(example.Greeter)
+	
 	fmt.Println(greeter.Greet())
+	
 }
 
 // handshakeConfigs are used to just do a basic handshake between

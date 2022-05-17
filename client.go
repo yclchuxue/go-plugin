@@ -84,16 +84,14 @@ type Client struct {
 	ctxCancel         context.CancelFunc
 	negotiatedVersion int
 
-	// clientWaitGroup is used to manage the lifecycle of the plugin management
-	// goroutines.
+	// clientWaitGroup is used to manage the lifecycle of the plugin management goroutines.
 	clientWaitGroup sync.WaitGroup
 
 	// stderrWaitGroup is used to prevent the command's Wait() function from
 	// being called before we've finished reading from the stderr pipe.
 	stderrWaitGroup sync.WaitGroup
 
-	// processKilled is used for testing only, to flag when the process was
-	// forcefully killed.
+	// processKilled is used for testing only, to flag when the process was forcefully killed.
 	processKilled bool
 }
 
@@ -103,9 +101,7 @@ func (c *Client) NegotiatedVersion() int {
 	return c.negotiatedVersion
 }
 
-// ClientConfig is the configuration used to initialize a new
-// plugin client. After being used to initialize a plugin client,
-// that configuration must not be modified again.
+// ClientConfig is the configuration used to initialize a new plugin client. After being used to initialize a plugin client, that configuration must not be modified again.
 type ClientConfig struct {
 	// HandshakeConfig is the configuration that must match servers.
 	HandshakeConfig
@@ -122,16 +118,18 @@ type ClientConfig struct {
 	// One of the following must be set, but not both.
 	//
 	// Cmd is the unstarted subprocess for starting the plugin. If this is
-	// set, then the Client starts the plugin process on its own and connects
-	// to it.
+	// set, then the Client starts the plugin process on its own and connects to it.
 	//
 	// Reattach is configuration for reattaching to an existing plugin process
 	// that is already running. This isn't common.
+	//Cmd 是启动插件的未启动子进程。 如果设置了此项，则客户端会自行启动插件进程并连接到它。
 	Cmd      *exec.Cmd
+	//重新附加是用于重新附加到已经运行的现有插件进程的配置。 这并不常见。
 	Reattach *ReattachConfig
 
 	// SecureConfig is configuration for verifying the integrity of the
 	// executable. It can not be used with Reattach.
+	//SecureConfig 是用于验证可执行文件完整性的配置。 它不能与 Reattach 一起使用。
 	SecureConfig *SecureConfig
 
 	// TLSConfig is used to enable TLS on the RPC client.
@@ -142,20 +140,22 @@ type ClientConfig struct {
 	// it will automatically be cleaned up. Otherwise, the client
 	// user is fully responsible for making sure to Kill all plugin
 	// clients. By default the client is _not_ managed.
+	//Managed 表示客户端是否应该由插件包管理。 
+	//如果为真，那么通过调用 CleanupClients，它会被自动清理。 
+	//否则，客户端用户有责任确保杀死所有插件客户端。 默认情况下，客户端_not_ 管理。
 	Managed bool
 
 	// The minimum and maximum port to use for communicating with
 	// the subprocess. If not set, this defaults to 10,000 and 25,000
 	// respectively.
+	//用于与子进程通信的最小和最大端口。 如果未设置，则默认分别为 10,000 和 25,000。
 	MinPort, MaxPort uint
 
-	// StartTimeout is the timeout to wait for the plugin to say it
-	// has started successfully.
-	StartTimeout time.Duration
+	// StartTimeout is the timeout to wait for the plugin to say it has started successfully.
+	StartTimeout time.Duration  //插件启动的超时时间
 
-	// If non-nil, then the stderr of the client will be written to here
-	// (as well as the log). This is the original os.Stderr of the subprocess.
-	// This isn't the output of synced stderr.
+	// If non-nil, then the stderr of the client will be written to here (as well as the log). This is the original os.Stderr of the subprocess. This isn't the output of synced stderr.
+	//如果非零，则客户端的标准错误将被写入此处（以及日志）。这是子进程的原始 os.Stderr。这不是同步标准错误的输出。
 	Stderr io.Writer
 
 	// SyncStdout, SyncStderr can be set to override the
@@ -295,8 +295,7 @@ func CleanupClients() {
 	wg.Wait()
 }
 
-// Creates a new plugin client which manages the lifecycle of an external
-// plugin and gets the address for the RPC connection.
+// Creates a new plugin client which manages the lifecycle of an external plugin and gets the address for the RPC connection.
 //
 // The client must be cleaned up at some point by calling Kill(). If
 // the client is a managed client (created with NewManagedClient) you
@@ -483,13 +482,13 @@ func (c *Client) Start() (addr net.Addr, err error) {
 	c.l.Lock()
 	defer c.l.Unlock()
 
+	//第一次start时address为nil
 	if c.address != nil {
 		return c.address, nil
 	}
 
-	// If one of cmd or reattach isn't set, then it is an error. We wrap
-	// this in a {} for scoping reasons, and hopeful that the escape
-	// analysis will pop the stack here.
+	// If one of cmd or reattach isn't set, then it is an error. 
+	//We wrap this in a {} for scoping reasons, and hopeful that the escape analysis will pop the stack here.
 	{
 		cmdSet := c.config.Cmd != nil
 		attachSet := c.config.Reattach != nil
@@ -503,6 +502,7 @@ func (c *Client) Start() (addr net.Addr, err error) {
 		}
 	}
 
+	//存在重新附加
 	if c.config.Reattach != nil {
 		return c.reattach()
 	}
@@ -579,7 +579,7 @@ func (c *Client) Start() (addr net.Addr, err error) {
 			ServerName:   "localhost",
 		}
 	}
-
+	//开启plugin进程，运行服务器
 	c.logger.Debug("starting plugin", "path", cmd.Path, "args", cmd.Args)
 	err = cmd.Start()
 	if err != nil {
@@ -619,8 +619,7 @@ func (c *Client) Start() (addr net.Addr, err error) {
 
 		defer c.clientWaitGroup.Done()
 
-		// get the cmd info early, since the process information will be removed
-		// in Kill.
+		// get the cmd info early, since the process information will be removed in Kill.
 		pid := c.process.Pid
 		path := cmd.Path
 
@@ -652,8 +651,7 @@ func (c *Client) Start() (addr net.Addr, err error) {
 		c.exited = true
 	}()
 
-	// Start a goroutine that is going to be reading the lines
-	// out of stdout
+	// Start a goroutine that is going to be reading the lines out of stdout
 	linesCh := make(chan string)
 	c.clientWaitGroup.Add(1)
 	go func() {
@@ -666,10 +664,8 @@ func (c *Client) Start() (addr net.Addr, err error) {
 		}
 	}()
 
-	// Make sure after we exit we read the lines from stdout forever
-	// so they don't block since it is a pipe.
-	// The scanner goroutine above will close this, but track it with a wait
-	// group for completeness.
+	// Make sure after we exit we read the lines from stdout forever so they don't block since it is a pipe.
+	// The scanner goroutine above will close this, but track it with a wait group for completeness.
 	c.clientWaitGroup.Add(1)
 	defer func() {
 		go func() {
@@ -690,8 +686,7 @@ func (c *Client) Start() (addr net.Addr, err error) {
 	case <-c.doneCtx.Done():
 		err = errors.New("plugin exited before we could connect")
 	case line := <-linesCh:
-		// Trim the line and split by "|" in order to get the parts of
-		// the output.
+		// Trim the line and split by "|" in order to get the parts of the output.
 		line = strings.TrimSpace(line)
 		parts := strings.SplitN(line, "|", 6)
 		if len(parts) < 4 {

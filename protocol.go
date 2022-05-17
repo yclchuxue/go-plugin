@@ -32,8 +32,7 @@ type ServerProtocol interface {
 	Serve(net.Listener)
 }
 
-// ClientProtocol is an interface that must be implemented for new plugin
-// protocols to be clients.
+// ClientProtocol is an interface that must be implemented for new plugin protocols to be clients.
 type ClientProtocol interface {
 	io.Closer
 

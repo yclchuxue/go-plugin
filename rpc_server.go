@@ -99,8 +99,7 @@ func (s *RPCServer) ServeConn(conn io.ReadWriteCloser) {
 	broker := newMuxBroker(mux)
 	go broker.Run()
 
-	// Use the control connection to build the dispenser and serve the
-	// connection.
+	// Use the control connection to build the dispenser and serve the connection.
 	server := rpc.NewServer()
 	server.RegisterName("Control", &controlServer{
 		server: s,

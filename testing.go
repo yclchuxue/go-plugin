@@ -13,15 +13,12 @@ import (
 	"google.golang.org/grpc"
 )
 
-// TestOptions allows specifying options that can affect the behavior of the
-// test functions
+// TestOptions allows specifying options that can affect the behavior of the test functions
 type TestOptions struct {
-	//ServerStdout causes the given value to be used in place of a blank buffer
-	//for RPCServer's Stdout
+	//ServerStdout causes the given value to be used in place of a blank buffer for RPCServer's Stdout
 	ServerStdout io.ReadCloser
 
-	//ServerStderr causes the given value to be used in place of a blank buffer
-	//for RPCServer's Stderr
+	//ServerStderr causes the given value to be used in place of a blank buffer for RPCServer's Stderr
 	ServerStderr io.ReadCloser
 }
 
@@ -31,8 +28,7 @@ type TestOptions struct {
 // TestConn is a helper function for returning a client and server
 // net.Conn connected to each other.
 func TestConn(t testing.T) (net.Conn, net.Conn) {
-	// Listen to any local port. This listener will be closed
-	// after a single connection is established.
+	// Listen to any local port. This listener will be closed after a single connection is established.
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("err: %s", err)
